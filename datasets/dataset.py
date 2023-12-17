@@ -1,11 +1,11 @@
-from abc import ABC
+from enum import Enum
 
 import lightning as L
-from torch_geometric.datasets import KarateClub
+from torch_geometric.datasets import KarateClub, Planetoid
 from torch_geometric.loader.dataloader import DataLoader
 
 
-class AbstractDataset(ABC):
+class Dataset(L.LightningDataModule):
     def __init__(self):
         self.dataset = None
 
@@ -27,11 +27,23 @@ class AbstractDataset(ABC):
         print(f"Has self-loops: {data.has_self_loops()}")
         print(f"Is undirected: {data.is_undirected()}")
 
+    def train_dataloader(self) -> DataLoader:
+        return DataLoader(self.dataset)
 
-class KarateClubDataset(AbstractDataset, L.LightningDataModule):
+
+class KarateClubDataset(Dataset):
     def __init__(self):
         self.dataset = KarateClub()
         self.print_info()
 
-    def train_dataloader(self) -> DataLoader:
-        return DataLoader(self.dataset)
+
+class PlanetoidDatasetType(Enum):
+    CORA = "Cora"
+    CITESEER = "CiteSeer"
+    PUBMED = "PubMed"
+
+
+class PlanetoidDataset(Dataset):
+    def __init__(self, name: PlanetoidDatasetType):
+        self.dataset = Planetoid(root="./datasets", name=name.value)
+        self.print_info()

@@ -10,8 +10,13 @@ from utils.visualise import visualize_embedding
 
 
 class GCN(L.LightningModule):
-    def __init__(self, num_features: int, num_classes: int):
+    def __init__(
+        self, num_features: int, num_classes: int, visualise: bool = False
+    ):
         super().__init__()
+
+        self.visualise = visualise
+
         torch.manual_seed(1234)
         self.conv1 = GCNConv(num_features, 4)
         self.conv2 = GCNConv(4, 4)
@@ -36,14 +41,15 @@ class GCN(L.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        data = batch
-        out, h = self.forward(data.x, data.edge_index)
+        out, h = self.forward(batch.x, batch.edge_index)
         out = out.cpu()
-        data = data.cpu()
-        loss = self.criterion(out[data.train_mask], data.y[data.train_mask])
+        batch = batch.cpu()
+        loss = self.criterion(out[batch.train_mask], batch.y[batch.train_mask])
 
-        if self.current_epoch % 10 == 0:
-            visualize_embedding(h, color=data.y, epoch=self.current_epoch, loss=loss)
+        if self.visualise and self.current_epoch % 10 == 0:
+            visualize_embedding(
+                h, color=batch.y, epoch=self.current_epoch, loss=loss
+            )
             time.sleep(0.3)
 
         return loss
